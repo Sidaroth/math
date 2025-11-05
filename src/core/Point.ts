@@ -118,6 +118,10 @@ export class Point implements Position {
         return this;
     }
 
+    toString() {
+        return `Point(x: ${this.x}, y: ${this.y})`;
+    }
+
     static rotate(point: Point, radians: number, pivot = new Point()): Point {
         return point.clone().rotate(radians, pivot);
     }

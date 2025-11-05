@@ -2,31 +2,27 @@ import { Point, Position } from '../core/Point';
 
 type VectorPolymorph = number | Vector | number[] | Point;
 
-// A 2D/3D vector class.
+// A 2D vector class.
 export class Vector implements Position {
     x: number;
 
     y: number;
 
-    z: number;
+    protected length: number = 0;
 
-    private length: number = 0;
-
-    constructor(x = 0, y = 0, z = 0) {
+    constructor(x = 0, y = 0) {
         this.x = x;
         this.y = y;
-        this.z = z;
         this.calculateLength(); // cache value.
     }
 
     toString() {
-        return `Vector: [${this.x}, ${this.y}, ${this.z}]`;
+        return `Vector: [${this.x}, ${this.y}]`;
     }
 
     zero() {
         this.x = 0;
         this.y = 0;
-        this.z = 0;
         this.length = 0;
     }
 
@@ -35,8 +31,8 @@ export class Vector implements Position {
     }
 
     // Calculates and caches the length of the vector. Called after any operation that changes the vector.
-    private calculateLength() {
-        this.length = Math.hypot((this.x), (this.y), (this.z));
+    protected calculateLength() {
+        this.length = Math.hypot(this.x, this.y);
     }
 
     // get length/magnitude.
@@ -51,7 +47,7 @@ export class Vector implements Position {
 
     // Useful when comparing length of two vectors together, saves a sqrt call.
     squaredLength() {
-        return (this.x * this.x) + (this.y * this.y) + (this.z * this.z);
+        return Math.hypot(this.x, this.y);
     }
 
     // Limit the magnitude to the specified 'max' value.
@@ -74,17 +70,17 @@ export class Vector implements Position {
     }
 
     // A unit vector is a vector with a magnitude of 1. Useful for representing direction/normals.
-    getUnit() {
+    getUnit(): Vector {
         const length = this.getLength();
-        if (length <= 0) return new Vector(0, 0, 0);
+        if (length <= 0) return new Vector(0, 0);
 
-        return new Vector(this.x / length, this.y / length, this.z / length);
+        return new Vector(this.x / length, this.y / length);
     }
 
     // Keep in mind this function uses '+' to convert back from string as .toFixed() returns a string.
     getFixedUnit(places: number = 2) {
         const unit = this.getUnit();
-        return new Vector(+unit.x.toFixed(places), +unit.y.toFixed(places), +unit.z.toFixed(places));
+        return new Vector(+unit.x.toFixed(places), +unit.y.toFixed(places));
     }
 
     rotateBy(radians: number, pivot: Point) {
@@ -114,7 +110,7 @@ export class Vector implements Position {
     }
 
     equals(vector: Vector) {
-        return this.x === vector.x && this.y === vector.y && this.z === vector.z;
+        return this.x === vector.x && this.y === vector.y;
     }
 
     // Returns the angle of the vector in radians in respect to the positive x-axis.
@@ -126,7 +122,6 @@ export class Vector implements Position {
     copyFrom(vector: Vector) {
         this.x = vector.x ?? 0;
         this.y = vector.y ?? 0;
-        this.z = vector.z ?? 0;
         this.calculateLength();
 
         return this;
@@ -140,8 +135,8 @@ export class Vector implements Position {
         return this;
     }
 
-    // Set the values of the vector - supports vector, array, and individual x, y, z values.
-    set(x: VectorPolymorph, y?: number, z?: number) {
+    // Set the values of the vector - supports vector, array, and individual x, y values.
+    set(x: VectorPolymorph, y?: number) {
         if (x instanceof Vector) {
             return this.copyFrom(x);
         }
@@ -150,10 +145,9 @@ export class Vector implements Position {
             return this.fromPoint(x);
         }
 
-        if (x instanceof Array) {
+        if (Array.isArray(x)) {
             this.x = x[0] ?? 0;
             this.y = x[1] ?? 0;
-            this.z = x[2] ?? 0;
             this.calculateLength();
 
             return this;
@@ -161,7 +155,6 @@ export class Vector implements Position {
 
         this.x = x ?? 0;
         this.y = y ?? 0;
-        this.z = z ?? 0;
         this.calculateLength();
 
         return this;
@@ -172,12 +165,11 @@ export class Vector implements Position {
         return new Vector().copyFrom(this);
     }
 
-    // Add another vector to this vector. Supports vector, array, and individual x, y, z values.
-    add(x: VectorPolymorph, y?: number, z?: number) {
+    // Add another vector to this vector. Supports vector, array, and individual x, y values.
+    add(x: VectorPolymorph, y?: number) {
         if (x instanceof Vector) {
             this.x += x.x ?? 0;
             this.y += x.y ?? 0;
-            this.z += x.z ?? 0;
             this.calculateLength();
             return this;
         }
@@ -190,27 +182,24 @@ export class Vector implements Position {
         }
 
         // Unsure how useful this one is.
-        if (x instanceof Array) {
+        if (Array.isArray(x)) {
             this.x += x[0] ?? 0;
             this.y += x[1] ?? 0;
-            this.z += x[2] ?? 0;
             this.calculateLength();
             return this;
         }
 
         this.x += x ?? 0;
         this.y += y ?? 0;
-        this.z += z ?? 0;
         this.calculateLength();
         return this;
     }
 
-    // Subtract another vector from this vector. Supports vector, array, and individual x, y, z values.
-    sub(x: VectorPolymorph, y?: number, z?: number) {
+    // Subtract another vector from this vector. Supports vector, array, and individual x, y values.
+    sub(x: VectorPolymorph, y?: number) {
         if (x instanceof Vector) {
             this.x -= x.x ?? 0;
             this.y -= x.y ?? 0;
-            this.z -= x.z ?? 0;
             this.calculateLength();
 
             return this;
@@ -225,10 +214,9 @@ export class Vector implements Position {
         }
 
         // Unsure how useful this one is.
-        if (x instanceof Array) {
+        if (Array.isArray(x)) {
             this.x -= x[0] ?? 0;
             this.y -= x[1] ?? 0;
-            this.z -= x[2] ?? 0;
             this.calculateLength();
 
             return this;
@@ -236,7 +224,6 @@ export class Vector implements Position {
 
         this.x -= x ?? 0;
         this.y -= y ?? 0;
-        this.z -= z ?? 0;
         this.calculateLength();
 
         return this;
@@ -250,7 +237,6 @@ export class Vector implements Position {
 
         this.x /= scalar;
         this.y /= scalar;
-        this.z /= scalar;
         this.calculateLength();
 
         return this;
@@ -264,7 +250,6 @@ export class Vector implements Position {
 
         this.x *= scalar;
         this.y *= scalar;
-        this.z *= scalar;
         this.calculateLength();
 
         return this;
@@ -277,27 +262,18 @@ export class Vector implements Position {
         return Math.acos(this.dot(vector) / (this.length * vector.length));
     }
 
-    // 3D dot product.
+    // 2D dot product.
     dot(vector: Vector): number {
-        return (this.x * vector.x) + (this.y * vector.y) + (this.z * vector.z);
-    }
-
-    // 3D cross product - Calculates a perpendicular vector to the plane defined by the two vectors.
-    cross(vector: Vector): Vector {
-        const x = (this.y * vector.z) - (this.z * vector.y);
-        const y = (this.z * vector.x) - (this.x * vector.z);
-        const z = (this.x * vector.y) - (this.y * vector.x);
-
-        return new Vector(x, y, z);
+        return (this.x * vector.x) + (this.y * vector.y);
     }
 
     // 2D cross product - returns the Z component of the 3D cross product. Equivalent to the determinant of the 2x2 matrix
     // formed by the two vectors.
-    cross2d(vector: Vector): number {
-        return (this.x * vector.y) - (this.y * vector.x); // Z component of 3d cross.
+    cross(vector: Vector): number {
+        return (this.x * vector.y) - (this.y * vector.x); 
     }
 
-    /// /// STATIC FUNCTIONS //////
+    /// STATIC METHODS ///
     // Return a new vector with the same values as the input vector.
     static clone(vector: Vector): Vector {
         return new Vector().copyFrom(vector);
@@ -352,16 +328,7 @@ export class Vector implements Position {
         const vector1 = vec1 instanceof Point ? Vector.fromPoint(vec1) : vec1;
         const vector2 = vec2 instanceof Point ? Vector.fromPoint(vec2) : vec2;
 
-        return (vector1.x * vector2.x) + (vector1.y * vector2.y) + (vector1.z * vector2.z);
-    }
-
-    // 3D cross product - Calculates a perpendicular vector to the plane defined by the two vectors.
-    static cross(vec1: Vector, vec2: Vector): Vector {
-        const x = (vec1.y * vec2.z) - (vec1.z * vec2.y);
-        const y = (vec1.z * vec2.x) - (vec1.x * vec2.z);
-        const z = (vec1.x * vec2.y) - (vec1.y * vec2.x);
-
-        return new Vector(x, y, z);
+        return (vector1.x * vector2.x) + (vector1.y * vector2.y);
     }
 
     static asPoint(vector: Vector): Point {

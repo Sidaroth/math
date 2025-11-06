@@ -2,6 +2,9 @@
     "name": "@sidaroth/math",
     "version": "0.2.0",
     "description": "A lightweight, high-performance math library for rendering, simulation, and physics applications.",
+    "publishConfig": {
+        "registry": "https://npm.pkg.github.com/"
+    },
     "author": "Christian Holt <sidaroth>",
     "license": "MIT",
     "type": "module",
@@ -24,7 +27,8 @@
         "test": "vitest run",
         "lint": "oxlint src",
         "test:watch": "vitest watch",
-        "check": "tsc --noEmit"
+        "check": "tsc --noEmit",
+        "release": "lerna publish from-package --yes"
     },
     "devDependencies": {
         "@types/node": "24.10.0",

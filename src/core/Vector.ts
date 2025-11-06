@@ -1,4 +1,5 @@
-import { Point, Position } from '../core/Point';
+import type { Position } from './Point';
+import { Point } from './Point';
 
 type VectorPolymorph = number | Vector | number[] | Point;
 
@@ -72,7 +73,9 @@ export class Vector implements Position {
     // A unit vector is a vector with a magnitude of 1. Useful for representing direction/normals.
     getUnit(): Vector {
         const length = this.getLength();
-        if (length <= 0) return new Vector(0, 0);
+        if (length <= 0) {
+            return new Vector(0, 0);
+        }
 
         return new Vector(this.x / length, this.y / length);
     }
@@ -257,20 +260,22 @@ export class Vector implements Position {
 
     // Returns the angle between two vectors in radians.
     angleBetween2d(vector: Vector) {
-        if (this.length === 0 || vector.length === 0) return 0; // Prevent division by zero.
+        if (this.length === 0 || vector.length === 0) {
+            return 0;
+        } // Prevent division by zero.
 
         return Math.acos(this.dot(vector) / (this.length * vector.length));
     }
 
     // 2D dot product.
     dot(vector: Vector): number {
-        return (this.x * vector.x) + (this.y * vector.y);
+        return this.x * vector.x + this.y * vector.y;
     }
 
     // 2D cross product - returns the Z component of the 3D cross product. Equivalent to the determinant of the 2x2 matrix
     // formed by the two vectors.
     cross(vector: Vector): number {
-        return (this.x * vector.y) - (this.y * vector.x); 
+        return this.x * vector.y - this.y * vector.x;
     }
 
     /// STATIC METHODS ///
@@ -328,7 +333,7 @@ export class Vector implements Position {
         const vector1 = vec1 instanceof Point ? Vector.fromPoint(vec1) : vec1;
         const vector2 = vec2 instanceof Point ? Vector.fromPoint(vec2) : vec2;
 
-        return (vector1.x * vector2.x) + (vector1.y * vector2.y);
+        return vector1.x * vector2.x + vector1.y * vector2.y;
     }
 
     static asPoint(vector: Vector): Point {
@@ -360,7 +365,7 @@ export class Vector implements Position {
 
     /**
      * Computes the Z-component of the 2D cross product formed by three points (a, b, c).
-     * 
+     *
      * Conceptually, this returns the signed area of the parallelogram spanned by
      * the vectors (b - a) and (c - b).
      *
@@ -381,6 +386,6 @@ export class Vector implements Position {
         const aby = b.y - a.y;
         const bcx = c.x - b.x;
         const bcy = c.y - b.y;
-        return (abx * bcy) - (aby * bcx);
+        return abx * bcy - aby * bcx;
     }
 }

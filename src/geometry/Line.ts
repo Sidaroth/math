@@ -1,5 +1,5 @@
 import { Point, Vector } from '../core';
-import { Geometry } from './Geometry';
+import { LazyCacheable } from '../core/LazyCacheable';
 
 /**
  * Represents a 2D line defined by an origin point and an end point.
@@ -7,7 +7,7 @@ import { Geometry } from './Geometry';
  * Provides methods for geometric operations such as length calculation,
  * midpoint calculation, angle calculation, and vector calculation.
  */
-export class Line extends Geometry {
+export class Line extends LazyCacheable {
     private readonly _origin: Point = new Point();
 
     private readonly _end: Point = new Point();

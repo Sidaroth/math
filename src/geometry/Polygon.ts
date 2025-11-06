@@ -1,6 +1,6 @@
 import { Point, Vector } from '../core';
 import { Rect } from './Rect';
-import { Geometry } from './Geometry';
+import { LazyCacheable } from '../core/LazyCacheable';
 
 /**
  * Represents a 2D polygon defined by a set of ordered vertices.
@@ -12,10 +12,10 @@ import { Geometry } from './Geometry';
  * Assumes vertices are defined in either clockwise or counter-clockwise order.
  * Does not support self-intersecting polygons or holes.
  */
-export class Polygon extends Geometry {
-    private _position: Point = new Point();
+export class Polygon extends LazyCacheable {
+    private readonly _position: Point = new Point();
 
-    private _edges: Vector[] = [];
+    private readonly _edges: Vector[] = [];
 
     private _vertices: Point[] = [];
 

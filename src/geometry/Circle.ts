@@ -1,5 +1,5 @@
 import { Point } from '../core';
-import { Geometry } from './Geometry';
+import { LazyCacheable } from '../core/LazyCacheable';
 import { Rect } from './Rect';
 
 /**
@@ -8,7 +8,7 @@ import { Rect } from './Rect';
  * Provides methods for geometric operations such as AABB calculation,
  * point containment, translation, and scaling.
  */
-export class Circle extends Geometry {
+export class Circle extends LazyCacheable {
     private readonly _position: Point = new Point();
 
     private _aabb: Rect = new Rect();

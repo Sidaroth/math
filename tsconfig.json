@@ -21,6 +21,8 @@
         "isolatedModules": true,
         /* Type Checking */
         "strict": true,
+        "noImplicitAny": true,
+        "strictPropertyInitialization": true,
         "noImplicitOverride": true,
         "noUnusedLocals": true,
         "noUnusedParameters": false,

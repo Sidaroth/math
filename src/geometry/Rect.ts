@@ -1,7 +1,7 @@
 import { isSize, Point, Size } from '../core';
 import { clamp } from '../utils';
 import { Circle } from './Circle';
-import { Geometry } from './Geometry';
+import { LazyCacheable } from '../core/LazyCacheable';
 import { Shape2d } from './shape2d';
 
 /**
@@ -10,7 +10,7 @@ import { Shape2d } from './shape2d';
  * Provides methods for geometric operations such as point containment,
  * vertex generation, intersection detection, and position setting.
  */
-export class Rect extends Geometry {
+export class Rect extends LazyCacheable {
     private readonly _position: Point = new Point();
     private readonly _size: Size = { width: 0, height: 0 };
 

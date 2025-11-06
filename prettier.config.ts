@@ -5,6 +5,9 @@ const config: Config = {
     semi: true,
     singleQuote: true,
     trailingComma: 'all',
+    endOfLine: 'lf',
+    arrowParens: 'always',
+    quoteProps: 'consistent',
 };
 
 export default config;

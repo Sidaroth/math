@@ -189,7 +189,7 @@ export class Vector extends LazyCacheable {
      * @returns The vector instance.
      */
     rotateBy(radians: number, pivot: Point): this {
-        const point = new Point(this._x, this._y).rotate(radians, pivot);
+        const point = new Point(this._x, this._y).rotateBy(radians, pivot);
 
         this._x = point.x;
         this._y = point.y;

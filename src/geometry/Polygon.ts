@@ -369,7 +369,7 @@ export class Polygon extends LazyCacheable {
     rotateBy(angle: number, pivot = this._centroid) {
         // Rotate each vertex around the pivot point.
         for (const vertex of this._vertices) {
-            vertex.rotate(angle, pivot);
+            vertex.rotateBy(angle, pivot);
         }
 
         return this.markDirty();

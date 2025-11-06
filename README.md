@@ -23,6 +23,7 @@ A lightweight collection of math utilities I’ve built and refined across vario
 - **Balance clarity and performance** - readable code that’s still fast enough for real-time use
 - **Protect users from pitfalls** - immutable or read-only outputs where mutation is unsafe.
 - **Testable** - built with repeatability and isolation in mind so results are consistent and verifiable by tests.
+- **Lazy** - internal state (like area, centroid, or length) is recalculated only when accessed, avoiding unnecessary work while maintaining correctness.
 
 
 ## Example Usage

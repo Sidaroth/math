@@ -1,6 +1,7 @@
 import { Point } from '../core';
 import { Vector } from '../vector';
 import { Rect } from './Rect';
+import { Geometry } from './Geometry';
 
 /**
  * Represents a 2D polygon defined by a set of ordered vertices.
@@ -12,8 +13,8 @@ import { Rect } from './Rect';
  * Assumes vertices are defined in either clockwise or counter-clockwise order.
  * Does not support self-intersecting polygons or holes.
  */
-export default class Polygon {
-    private _position: Point;
+export class Polygon extends Geometry {
+    private _position: Point = new Point();
 
     private _edges: Vector[] = [];
 
@@ -29,14 +30,17 @@ export default class Polygon {
 
     private _perimeter: number = 0;
 
-    private _isDirty: boolean = true;
-
-
     constructor(vertices: Point[]) {
-        if (vertices.length < 3) throw new Error('A polygon must have at least 3 vertices.');
+        super();
 
-        this._position = vertices[0];
-        this._vertices = vertices;
+        if (vertices.length < 3) {
+            throw new Error('A polygon must have at least 3 vertices.');
+        }
+
+        this._position.copyFrom(vertices[0]);
+
+        // To truly ensure immutability / cross-contamination, we need to clone the vertices.
+        this._vertices = vertices.map((vertex) => vertex.clone());
         this.refresh();
     }
 
@@ -105,25 +109,7 @@ export default class Polygon {
         this.ensureRefreshed();
 
         // Must return a clone to prevent external mutation of the polygon's vertices.
-        return this._vertices.map(vertex => vertex.clone());
-    }
-
-    /**
-     * Marks the polygon as dirty, indicating that its derived properties need to be recalculated.
-     */
-    private markDirty() {
-        this._isDirty = true;
-    }
-
-    /**
-     * Ensures that the polygon is refreshed, meaning that its derived properties are up to date.
-     * If the polygon is dirty, it will refresh itself. This gives us a lazy refresh mechanism combined with the getters and cache.
-     * @private
-     */
-    private ensureRefreshed() {
-        if (this._isDirty) {
-            this.refresh();
-        }
+        return this._vertices.map((vertex) => vertex.clone());
     }
 
     /**
@@ -146,9 +132,9 @@ export default class Polygon {
     }
 
     /**
-     * Refreshes the polygon's derived properties and caches them. 
+     * Refreshes the polygon's derived properties and caches them.
      * Must be called whenever the polygon's vertices are updated or the polygon's position is changed.
-     * 
+     *
      * This method is called internally by the polygon class when the polygon's vertices are updated or the polygon's position is changed.
      * It updates the polygon's derived properties and caches them in place.
      * @protected
@@ -163,8 +149,6 @@ export default class Polygon {
         this.calculateAABB();
         this.calculateArea();
         this.calculatePerimeter();
-
-        this._isDirty = false;
     }
 
     /**
@@ -189,17 +173,24 @@ export default class Polygon {
         const verticesCount = this._vertices.length;
 
         // Polygons with three or fewer vertices cannot be concave.
-        if (verticesCount <= 3) return;
-      
+        if (verticesCount <= 3) {
+            return;
+        }
+
         let sign = 0;
         for (let i = 0; i < verticesCount; i += 1) {
             // Wrap around: previous → current → next.
-            const prevVertex = this._vertices[(i + verticesCount - 1) % verticesCount];
+            const prevVertex =
+                this._vertices[(i + verticesCount - 1) % verticesCount];
             const currVertex = this._vertices[i];
             const nextVertex = this._vertices[(i + 1) % verticesCount];
-        
+
             // Compute Z component of the 2D cross product formed by the two edges at the current vertex.
-            const crossZ = Vector.cross2dFromPoints(prevVertex, currVertex, nextVertex);
+            const crossZ = Vector.cross2dFromPoints(
+                prevVertex,
+                currVertex,
+                nextVertex,
+            );
 
             // Determine the sign of the cross product.
             const currentSign = Math.sign(crossZ);
@@ -241,7 +232,7 @@ export default class Polygon {
             const nextVertex = this._vertices[(i + 1) % this._vertices.length];
 
             // Cross-product term between consecutive vertices. Used for signed area calculation.
-            const a = (vertex.x * nextVertex.y) - (nextVertex.x * vertex.y);
+            const a = vertex.x * nextVertex.y - nextVertex.x * vertex.y;
 
             // Weighted sum of vertex coordinates (x and y) for the centroid calculation.
             centerX += (vertex.x + nextVertex.x) * a;
@@ -249,13 +240,15 @@ export default class Polygon {
 
             // Accumulate total signed area contribution.
             area += a;
-        };
+        }
 
         // Shoelace formula normalization.
         area *= 0.5;
 
         if (area === 0) {
-            console.warn('Degenerate Polygon detected - Polygon has zero area - centroid cannot be calculated.');
+            console.warn(
+                'Degenerate Polygon detected - Polygon has zero area - centroid cannot be calculated.',
+            );
             this._centroid.set(0, 0);
             return;
         }
@@ -285,7 +278,7 @@ export default class Polygon {
         let minY = Infinity;
         let maxX = -Infinity;
         let maxY = -Infinity;
-    
+
         // Iterate over all vertices to find the outermost bounds.
         for (const vertex of this._vertices) {
             minX = Math.min(minX, vertex.x);
@@ -293,15 +286,10 @@ export default class Polygon {
             minY = Math.min(minY, vertex.y);
             maxY = Math.max(maxY, vertex.y);
         }
-    
+
         // Construct a Rect representing the bounding box.
         // Width and height are derived from the min/max coordinate extents.
-        this._aabb = new Rect(
-            minX,
-            minY,
-            maxX - minX,
-            maxY - minY
-        );
+        this._aabb = new Rect(minX, minY, maxX - minX, maxY - minY);
     }
 
     /**
@@ -323,8 +311,8 @@ export default class Polygon {
             const nextVertex = this._vertices[(i + 1) % this._vertices.length];
 
             // Add the cross-product term of the current and next vertex.
-            area += (vertex.x * nextVertex.y) - (nextVertex.x * vertex.y);
-        };
+            area += vertex.x * nextVertex.y - nextVertex.x * vertex.y;
+        }
 
         this._area = area * 0.5;
     }
@@ -337,7 +325,7 @@ export default class Polygon {
     private calculatePerimeter() {
         let perimeter = 0;
         const n = this._vertices.length;
-        for (let i = 0; i < n; i++) {
+        for (let i = 0; i < n; i += 1) {
             const a = this._vertices[i];
             const b = this._vertices[(i + 1) % n];
             perimeter += a.distance(b);
@@ -359,12 +347,12 @@ export default class Polygon {
         const currentPos = this._position;
         // We want to move each vertex in the polygon by the difference between the new position and the old position.
         const change = Point.subtract(pos, currentPos);
-        this.translate(change);  
+        this.translate(change);
 
         // Update the position of the polygon - defined as the first vertex.
         const newPosition = this._vertices[0];
         this._position = newPosition;
-        this.markDirty();
+        return this.markDirty();
     }
 
     /**
@@ -380,7 +368,7 @@ export default class Polygon {
             vertex.rotate(angle, pivot);
         }
 
-        this.markDirty();
+        return this.markDirty();
     }
 
     /**
@@ -401,24 +389,28 @@ export default class Polygon {
     containsPoint(point: Point) {
         let inside = false;
         const vertexCount = this._vertices.length;
-      
+
         for (let current = 0; current < vertexCount; current += 1) {
             const next = (current + 1) % vertexCount;
             const currentVertex = this._vertices[current];
             const nextVertex = this._vertices[next];
 
             // check if the ray crosses the polygon's edge
-            const crossesVerticalSpan = (currentVertex.y > point.y) !== (nextVertex.y > point.y);
-            if (!crossesVerticalSpan) continue;
+            const crossesVerticalSpan =
+                currentVertex.y > point.y !== nextVertex.y > point.y;
+
+            if (!crossesVerticalSpan) {
+                continue;
+            }
 
             // Represent the edge as a vector from currentVertex to nextVertex.
             const edge = Vector.sub(nextVertex, currentVertex);
 
             // Find normalized intersection factor along the edge (0–1 range).
-            const t = (point.y - currentVertex.y) / edge.y; 
+            const t = (point.y - currentVertex.y) / edge.y;
 
             // Compute the X coordinate where the ray would intersect this edge.
-            const intersectX = currentVertex.x + (edge.x * t);
+            const intersectX = currentVertex.x + edge.x * t;
 
             // If the intersection is to the right of the point, toggle the inside state.
             if (point.x < intersectX) {
@@ -440,7 +432,7 @@ export default class Polygon {
             vertex.add(offset);
         }
 
-        this.markDirty();
+        return this.markDirty();
     }
 
     /**
@@ -455,12 +447,12 @@ export default class Polygon {
             vertex.subtract(pivot).multiply(scale).add(pivot);
         }
 
-        this.markDirty();
+        return this.markDirty();
     }
 
     addVertex(vertex: Point) {
         this._vertices.push(vertex);
-        this.markDirty();
+        return this.markDirty();
     }
 
     removeVertex(index: number) {
@@ -470,14 +462,13 @@ export default class Polygon {
         }
 
         this._vertices.splice(index, 1);
-        this.markDirty();
+        return this.markDirty();
     }
 
     updateVertex(index: number, vertex: Point) {
         this._vertices[index] = vertex;
-        this.markDirty();
+        return this.markDirty();
     }
-
 
     /**
      * Creates a deep copy of the polygon.
@@ -485,7 +476,9 @@ export default class Polygon {
      * @returns A new polygon instance with cloned vertices and identical properties.
      */
     clone() {
-        const clone = new Polygon(this._vertices.map(vertex => vertex.clone()));
+        const clone = new Polygon(
+            this._vertices.map((vertex) => vertex.clone()),
+        );
         clone.setPosition(this._position.x, this._position.y);
         return clone;
     }
@@ -495,7 +488,7 @@ export default class Polygon {
      *
      * @returns A string listing vertex coordinates.
      */
-    toString() {
-        return `Polygon(vertices: ${this._vertices.map(vertex => vertex.toString()).join(', ')})`;
+    override toString() {
+        return `Polygon(vertices: ${this._vertices.map((vertex) => vertex.toString()).join(', ')})`;
     }
 }

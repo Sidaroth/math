@@ -71,7 +71,7 @@ export class Point implements Position {
         const x = this.x - point.x;
         const y = this.y - point.y;
 
-        return Math.sqrt((x * x) + (y * y));
+        return Math.sqrt(x * x + y * y);
     }
 
     // Returns the squared distance between two points.
@@ -80,7 +80,7 @@ export class Point implements Position {
         const x = this.x - point.x;
         const y = this.y - point.y;
 
-        return (x * x) + (y * y);
+        return x * x + y * y;
     }
 
     // Returns the angle between two points (in radians) in range (-π, π].
@@ -108,8 +108,8 @@ export class Point implements Position {
         const shifted = this.clone().subtract(pivot);
 
         // Use the rotation matrix to rotate the point around the pivot shifted origin
-        this.x = (shifted.x * cos) - (shifted.y * sin);
-        this.y = (shifted.x * sin) + (shifted.y * cos);
+        this.x = shifted.x * cos - shifted.y * sin;
+        this.y = shifted.x * sin + shifted.y * cos;
 
         // Shift the point back by the pivot point
         this.x += pivot.x;

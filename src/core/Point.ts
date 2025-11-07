@@ -61,7 +61,7 @@ export class Point {
             return this;
         }
 
-        this.x = x ?? 0;
+        this.x = x;
         this.y = y ?? 0;
 
         return this;
@@ -111,7 +111,7 @@ export class Point {
             return this;
         }
 
-        this.x += x ?? 0;
+        this.x += x;
         this.y += y ?? 0;
 
         return this;
@@ -141,7 +141,7 @@ export class Point {
             return this;
         }
 
-        this.x -= x ?? 0;
+        this.x -= x;
         this.y -= y ?? 0;
 
         return this;

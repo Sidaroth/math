@@ -39,6 +39,14 @@ describe('Point', () => {
             expect(p.y).toBe(2);
         });
 
+        it('sets values correctly with missing y value (JS misuse)', () => {
+            const p = new Point();
+            // @ts-expect-error - we are testing the fallback case where y is missing (JS misuse)
+            p.set(5);
+            expect(p.x).toBe(5);
+            expect(p.y).toBe(0);
+        });
+
         it('sets values correctly from another point', () => {
             const p1 = new Point(1, 2);
             const p2 = new Point(3, 4);
@@ -65,6 +73,41 @@ describe('Point', () => {
             p.add(1, -2);
             expect(p.x).toBe(3);
             expect(p.y).toBe(1);
+        });
+
+        it('adds numbers correctly with missing y value (JS misuse)', () => {
+            const p = new Point(2, 3);
+            // @ts-expect-error - we are testing the fallback case where y is missing (JS misuse)
+            p.add(1);
+            expect(p.x).toBe(3);
+
+            // Should add 0 to y.
+            expect(p.y).toBe(3);
+        });
+
+        it('adds another point correctly', () => {
+            const p1 = new Point(2, 3);
+            const p2 = new Point(1, -2);
+            p1.add(p2);
+            expect(p1.x).toBe(3);
+            expect(p1.y).toBe(1);
+        });
+
+        it('subtracts numbers correctly', () => {
+            const p = new Point(2, 3);
+            p.subtract(1, -2);
+            expect(p.x).toBe(1);
+            expect(p.y).toBe(5);
+        });
+
+        it('subtracts numbers correctly with missing y value (JS misuse)', () => {
+            const p = new Point(2, 3);
+            // @ts-expect-error - we are testing the fallback case where y is missing (JS misuse)
+            p.subtract(1);
+            expect(p.x).toBe(1);
+
+            // Should subtract 0 from y.
+            expect(p.y).toBe(3);
         });
 
         it('subtracts another point correctly', () => {
@@ -98,10 +141,15 @@ describe('Point', () => {
     });
 
     describe('Geometry and comparison operations', () => {
-        it('equals correctly', () => {
+        it('equals another point correctly', () => {
             const p1 = new Point(1, 2);
             const p2 = new Point(1, 2);
             expect(p1.equals(p2)).toBe(true);
+        });
+
+        it('equals numbers correctly', () => {
+            const p1 = new Point(1, 2);
+            expect(p1.equals(1, 2)).toBe(true);
         });
 
         it('computes distance and squared distance', () => {
@@ -111,6 +159,31 @@ describe('Point', () => {
             expect(p1.squaredDistance(p2)).toBeCloseTo(25);
         });
 
+        it('calculates the midpoint correctly between two points', () => {
+            const p1 = new Point(0, 0);
+            const p2 = new Point(4, 6);
+            const mid = p1.midpoint(p2);
+
+            expect(mid.equals(2, 3)).toBe(true);
+        });
+
+        it('handles negative coordinates in midpoint calculation', () => {
+            const p1 = new Point(-2, -2);
+            const p2 = new Point(2, 2);
+            const mid = p1.midpoint(p2);
+
+            expect(mid.equals(0, 0)).toBe(true);
+        });
+
+        it('handles non-integer coordinates in midpoint calculation', () => {
+            const p1 = new Point(0.5, 1.5);
+            const p2 = new Point(2.5, 3.5);
+            const mid = p1.midpoint(p2);
+
+            expect(mid.x).toBeCloseTo(1.5);
+            expect(mid.y).toBeCloseTo(2.5);
+        });
+
         it('negates coordinates', () => {
             const p = new Point(3, -4);
             p.negate();
@@ -118,11 +191,18 @@ describe('Point', () => {
             expect(p.y).toBe(4);
         });
 
-        it('inverses safely (skipping zero)', () => {
+        it('inverses safely (skipping zero) - x', () => {
             const p = new Point(2, 0);
             p.inverse();
             expect(p.x).toBeCloseTo(0.5);
             expect(p.y).toBe(0);
+        });
+
+        it('inverses safely (skipping zero) - y', () => {
+            const p = new Point(0, 2);
+            p.inverse();
+            expect(p.x).toBe(0);
+            expect(p.y).toBeCloseTo(0.5);
         });
     });
 

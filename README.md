@@ -22,7 +22,7 @@ A lightweight collection of math utilities I’ve built and refined across vario
 - **Data-oriented where possible** - easy to interop with WebGL, Pixi, or compute pipelines.
 - **Balance clarity and performance** - readable code that’s still fast enough for real-time use
 - **Protect users from pitfalls** - immutable or read-only outputs where mutation is unsafe.
-- **Testable** - built with repeatability and isolation in mind so results are consistent and verifiable by tests.
+- **Testable** - built with repeatability and isolation in mind so results are consistent and verifiable by tests. Aims for 100% coverage.
 - **Lazy** - internal state (like area, centroid, or length) is recalculated only when accessed, avoiding unnecessary work while maintaining correctness.
 
 

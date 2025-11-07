@@ -1,7 +1,17 @@
+import { logMsg } from '../utils/logMsg';
 import { LazyCacheable } from './lazyCacheable';
 import { Point } from './point';
 
 type VectorPolymorph = number | Vector | Point | [number, number];
+
+export function isTuple(value: unknown): value is [number, number] {
+    return (
+        Array.isArray(value) &&
+        value.length === 2 &&
+        typeof value[0] === 'number' &&
+        typeof value[1] === 'number'
+    );
+}
 
 /**
  * Represents a 2D vector.
@@ -20,18 +30,44 @@ export class Vector extends LazyCacheable {
     private readonly _unit!: Vector;
 
     /**
+     * Creates a new vector at the origin (0, 0).
+     */
+    constructor();
+
+    /**
+     * Creates a new vector from x and y components.
      * @param x - The x component of the vector.
      * @param y - The y component of the vector.
      */
-    constructor(x = 0, y = 0) {
+    constructor(x: number, y: number);
+
+    /**
+     * Creates a new vector from another vector.
+     * @param vector - The vector to copy from.
+     */
+    constructor(vector: Vector);
+
+    /**
+     * Creates a new vector from a point.
+     * @param point - The point to create the vector from.
+     */
+    constructor(point: Point);
+
+    /**
+     * Creates a new vector from an array of [x, y] values.
+     * @param array - The array of [x, y] values.
+     */
+    constructor(array: [number, number]);
+
+    // implementation
+    constructor(x: VectorPolymorph = 0, y?: number) {
         super();
 
-        this._x = x;
-        this._y = y;
+        // set handles all polymorph inputs.
+        this.set(x, y);
 
         // This creates a new vector - without running the constructor (prevents recursive construction).
         this._unit = Object.create(Vector.prototype) as Vector;
-        Object.seal(this._unit);
         this._unit.zero();
         this.markDirty();
     }
@@ -107,7 +143,6 @@ export class Vector extends LazyCacheable {
     /** Recomputes the cached internal state of the vector. */
     protected refresh(): void {
         this.calculateLength();
-        this.calculateUnit();
     }
 
     /** Calculates the length and squared length of the vector. */
@@ -117,15 +152,29 @@ export class Vector extends LazyCacheable {
 
         // Calculating squared length first is more efficient than calculating the square root first.
         // this saves us from having to calculate the square root twice.
-        this._squaredLength = x * x + y * y;
-        this._length = Math.sqrt(this._squaredLength);
+        let squaredLength = x * x + y * y;
+
+        // If _x or _y is not a number, set squaredLength to 0. Log a warning if in development.
+        if (!Number.isFinite(squaredLength)) {
+            logMsg(
+                `Invalid squared length: ${squaredLength}, x: ${x}, y: ${y}`,
+            );
+            squaredLength = 0;
+        }
+
+        this._squaredLength = squaredLength;
+        this._length = Math.sqrt(squaredLength);
+
+        // Calculate unit after length has been calculated - unit calculation assumes length has been calculated.
+        this.calculateUnit();
     }
 
-    /** Calculates the unit vector of the vector. */
+    /** Calculates the unit vector of the vector. Assumes length has been calculated. */
     private calculateUnit(): void {
         const length = this._length;
-        // Don't allow NaN, Infinity, or negative lengths - prevents division by zero / NaN.
-        if (!Number.isFinite(length) || length <= 0) {
+
+        // Prevent division by zero.
+        if (length === 0) {
             this._unit.zero();
             return;
         }
@@ -135,11 +184,17 @@ export class Vector extends LazyCacheable {
 
     /**
      * Sets the magnitude/length of the vector. Retains direction.
-     * @param length - The new length/magnitude of the vector.
+     * @param length - The new length/magnitude of the vector. Absolute value is used.
      * @returns The vector with the new length/magnitude.
      */
     setLength(length: number): this {
-        return this.copyFrom(this.unit.multiply(length));
+        const absLength = Math.abs(length);
+        if (!Number.isFinite(absLength)) {
+            logMsg(`Invalid length: ${absLength}`);
+            return this.zero();
+        }
+
+        return this.copyFrom(this.unit.multiply(absLength));
     }
 
     /** Limits the magnitude of the vector to the specified 'max' value.
@@ -147,8 +202,9 @@ export class Vector extends LazyCacheable {
      * @returns The vector with the limited length/magnitude.
      */
     limit(max: number): this {
-        if (this._squaredLength > max * max) {
-            this.divide(Math.sqrt(this._squaredLength)).multiply(max);
+        const squaredLength = this.squaredLength;
+        if (squaredLength > max * max) {
+            this.divide(Math.sqrt(this.squaredLength)).multiply(max);
         }
 
         return this;
@@ -168,17 +224,29 @@ export class Vector extends LazyCacheable {
      * @returns The distance between the two vectors.
      */
     dist(vector: Vector): number {
-        return vector.clone().sub(this).length;
+        // uses static method to avoid cloning the vectors or tampering with original vector states.
+        return Vector.subtract(vector, this).length;
     }
 
     /**
-     * @param places - The number of decimal places to round to.
+     * @param places - The number of decimal places to round to. Defaults to 2.
      * @returns A new vector with the unit vector rounded to the specified number of decimal places.
      */
     getFixedUnit(places: number = 2): Vector {
+        if (!Number.isInteger(places) || places < 0 || places > 100) {
+            logMsg(`Invalid places: ${places} - using default of 2.`);
+            places = 2;
+        }
+
+        // .toFixed() returns a string, so we need to convert it to a number.
+        // .toFixed() zero pads up to "places" digits after the decimal point if necessary.
+        // .toFixed() rounds to the nearest integer.
+        // e.g. 0.4.toFixed(3) = "0.400"
+        // e.g. 0.7071067811865476.toFixed(0) = "1"
+        // e.g. 0.7071067811865476.toFixed(2) = "0.71"
         return new Vector(
-            +this._unit._x.toFixed(places),
-            +this._unit._y.toFixed(places),
+            +this.unit._x.toFixed(places),
+            +this.unit._y.toFixed(places),
         );
     }
 
@@ -249,8 +317,8 @@ export class Vector extends LazyCacheable {
      * @returns The vector instance.
      */
     copyFrom(vector: Vector): this {
-        this._x = vector._x ?? 0;
-        this._y = vector._y ?? 0;
+        this._x = vector.x;
+        this._y = vector.y;
         return this.markDirty();
     }
 
@@ -281,14 +349,25 @@ export class Vector extends LazyCacheable {
             return this.fromPoint(x);
         }
 
-        if (Array.isArray(x)) {
-            this._x = x[0] ?? 0;
-            this._y = x[1] ?? 0;
+        if (isTuple(x)) {
+            this._x = x[0];
+            this._y = x[1];
             return this.markDirty();
         }
 
-        this._x = x ?? 0;
-        this._y = y ?? 0;
+        // Only reached for numeric inputs (or mangled inputs) All other polymorph types handled above.
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            logMsg(`Invalid x or y: ${x}, ${y}`);
+            return this;
+        }
+
+        this._x = x;
+
+        // note: y! is safe if we get here, because we have already checked that x and y are finite above
+        // and handled every other Polymorph. Sadly TS gets confused about the y?: number type and requires ?? null check
+        // which again confuses v8 test runner - ugh.
+        this._y = y!;
+
         return this.markDirty();
     }
 
@@ -299,15 +378,38 @@ export class Vector extends LazyCacheable {
 
     /**
      * Adds another vector to this vector.
-     * @param x - The vector to add.
-     * @param y - The y component of the vector.
-     * Supports vector, array, and individual x, y values.
+     * @param vector - The vector to add.
      * @returns The vector instance.
      */
+    add(vector: Vector): this;
+
+    /**
+     * Adds a point to this vector.
+     * @param point - The point to add.
+     * @returns The vector instance.
+     */
+    add(point: Point): this;
+
+    /**
+     * Adds an array of [x, y] values to this vector.
+     * @param array - The array of [x, y] values to add.
+     * @returns The vector instance.
+     */
+    add(array: [number, number]): this;
+
+    /**
+     * Adds x and y components to this vector.
+     * @param x - The x component to add.
+     * @param y - The y component to add.
+     * @returns The vector instance.
+     */
+    add(x: number, y: number): this;
+
+    // implementation
     add(x: VectorPolymorph, y?: number): this {
         if (x instanceof Vector) {
-            this._x += x._x ?? 0;
-            this._y += x._y ?? 0;
+            this._x += x.x;
+            this._y += x.y;
             return this.markDirty();
         }
 
@@ -317,29 +419,61 @@ export class Vector extends LazyCacheable {
             return this.markDirty();
         }
 
-        // Unsure how useful this one is.
-        if (Array.isArray(x)) {
-            this._x += x[0] ?? 0;
-            this._y += x[1] ?? 0;
+        if (isTuple(x)) {
+            this._x += x[0];
+            this._y += x[1];
             return this.markDirty();
         }
 
-        this._x += x ?? 0;
-        this._y += y ?? 0;
+        // Only reached for numeric inputs (or mangled inputs) All other polymorph types handled above.
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            logMsg(`Invalid x or y: ${x}, ${y}`);
+            return this;
+        }
+
+        this._x += x;
+
+        // note: y! is safe if we get here, because we have already checked that x and y are finite above
+        // and handled every other Polymorph. Sadly TS gets confused about the y?: number type and requires ?? null check
+        // which again confuses v8 test runner - ugh.
+        this._y += y!;
         return this.markDirty();
     }
 
     /**
      * Subtracts another vector from this vector.
-     * @param x - The vector to subtract.
-     * @param y - The y component of the vector.
-     * Supports vector, array, and individual x, y values.
+     * @param vector - The vector to subtract.
      * @returns The vector instance.
      */
-    sub(x: VectorPolymorph, y?: number): this {
+    subtract(vector: Vector): this;
+
+    /**
+     * Subtracts a point from this vector.
+     * @param point - The point to subtract.
+     * @returns The vector instance.
+     */
+    subtract(point: Point): this;
+
+    /**
+     * Subtracts an array of [x, y] values from this vector.
+     * @param array - The array of [x, y] values to subtract.
+     * @returns The vector instance.
+     */
+    subtract(array: [number, number]): this;
+
+    /**
+     * Subtracts x and y components from this vector.
+     * @param x - The x component to subtract.
+     * @param y - The y component to subtract.
+     * @returns The vector instance.
+     */
+    subtract(x: number, y: number): this;
+
+    // implementation
+    subtract(x: VectorPolymorph, y?: number): this {
         if (x instanceof Vector) {
-            this._x -= x._x ?? 0;
-            this._y -= x._y ?? 0;
+            this._x -= x._x;
+            this._y -= x._y;
 
             return this.markDirty();
         }
@@ -351,16 +485,25 @@ export class Vector extends LazyCacheable {
             return this.markDirty();
         }
 
-        // Unsure how useful this one is.
-        if (Array.isArray(x)) {
-            this._x -= x[0] ?? 0;
-            this._y -= x[1] ?? 0;
+        if (isTuple(x)) {
+            this._x -= x[0];
+            this._y -= x[1];
 
             return this.markDirty();
         }
 
-        this._x -= x ?? 0;
-        this._y -= y ?? 0;
+        // Only reached for numeric inputs (or mangled inputs) All other polymorph types handled above.
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            logMsg(`Invalid x or y: ${x}, ${y}`);
+            return this;
+        }
+
+        this._x -= x;
+
+        // note: y! is safe if we get here, because we have already checked that x and y are finite above
+        // and handled every other Polymorph. Sadly TS gets confused about the y?: number type and requires ?? null check
+        // which again confuses v8 test runner - ugh.
+        this._y -= y!;
 
         return this.markDirty();
     }
@@ -372,6 +515,7 @@ export class Vector extends LazyCacheable {
      */
     divide(scalar: number): this {
         if (!Number.isFinite(scalar) || scalar === 0) {
+            logMsg(`Illegal division by scalar: ${scalar}`);
             return this;
         }
 
@@ -512,24 +656,21 @@ export class Vector extends LazyCacheable {
      * @param vec2 - The second vector to subtract.
      * @returns A new vector with the subtracted values.
      */
-    static sub(vec1: Vector | Point, vec2: Vector | Point): Vector {
+    static subtract(vec1: Vector | Point, vec2: Vector | Point): Vector {
         const vector1 = vec1 instanceof Point ? Vector.fromPoint(vec1) : vec1;
         const vector2 = vec2 instanceof Point ? Vector.fromPoint(vec2) : vec2;
 
-        return vector1.clone().sub(vector2);
+        return vector1.clone().subtract(vector2);
     }
 
     /**
      * Calculates the dot product of two vectors.
-     * @param vec1 - The first vector to calculate the dot product with.
-     * @param vec2 - The second vector to calculate the dot product with.
+     * @param elemA - The first vector to calculate the dot product with.
+     * @param elemB - The second vector to calculate the dot product with.
      * @returns The dot product of the two vectors.
      */
-    static dot(vec1: Vector | Point, vec2: Vector | Point): number {
-        const vector1 = vec1 instanceof Point ? Vector.fromPoint(vec1) : vec1;
-        const vector2 = vec2 instanceof Point ? Vector.fromPoint(vec2) : vec2;
-
-        return vector1._x * vector2._x + vector1._y * vector2._y;
+    static dot(elemA: Vector | Point, elemB: Vector | Point): number {
+        return elemA.x * elemB.x + elemA.y * elemB.y;
     }
 
     /**

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { Point } from '../../src/core';
+import { Point } from '@core/point';
 
 describe('Point', () => {
     describe('core operations', () => {

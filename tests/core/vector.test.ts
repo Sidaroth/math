@@ -1,6 +1,7 @@
 // vector.test.ts
 import { describe, it, expect } from 'vitest';
-import { Point, Vector } from '../../src/core';
+import { Vector } from '@core/vector';
+import { Point } from '@core/point';
 
 describe('Vector', () => {
     it('constructs with x and y', () => {

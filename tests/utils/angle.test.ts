@@ -6,7 +6,7 @@ import {
     degreesToRadians,
     radiansToDegrees,
     normalizeAngle,
-} from '../../src/utils';
+} from '@utils/angle';
 
 describe('Angle utilities', () => {
     describe('constants', () => {

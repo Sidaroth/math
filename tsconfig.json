@@ -29,19 +29,19 @@
         "declaration": true,
         "declarationMap": true,
         "sourceMap": true,
-        "baseUrl": "./src",
+        "baseUrl": ".",
         "paths": {
             "@core/*": [
-                "core/*"
+                "src/core/*"
             ],
-            "@physics/*": [
-                "physics/*"
-            ],
-            "@shapes/*": [
-                "shapes/*"
+            "@geometry/*": [
+                "src/geometry/*"
             ],
             "@utils/*": [
-                "utils/*"
+                "src/utils/*"
+            ],
+            "@src/*": [
+                "src/*"
             ]
         }
     },

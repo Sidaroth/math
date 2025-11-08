@@ -10,7 +10,7 @@ import {
     easeInQuad,
     easeOutQuad,
     easeInOutQuad,
-} from '../../src/utils';
+} from '@utils/scalar';
 
 describe('Scalar Math Utilities', () => {
     describe('clamp()', () => {

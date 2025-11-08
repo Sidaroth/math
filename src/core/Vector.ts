@@ -1,6 +1,6 @@
-import { logMsg } from '../utils/logMsg';
-import { LazyCacheable } from './lazyCacheable';
+import { logMsg } from '@utils/logMsg';
 import { Point } from './point';
+import { LazyCacheable } from './lazyCacheable';
 
 type VectorPolymorph = number | Vector | Point | [number, number];
 

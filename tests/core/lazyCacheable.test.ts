@@ -1,5 +1,5 @@
 import { describe, it, expect, vi } from 'vitest';
-import { LazyCacheable } from '../../src/core';
+import { LazyCacheable } from '@core/lazyCacheable';
 
 /**
  * As LazyCacheable is an abstract class, we need to create a concrete subclass to test it.
@@ -27,7 +27,7 @@ class TestCacheable extends LazyCacheable {
         this.markDirty();
     }
 
-    get isDirty() {
+    override get isDirty(): boolean {
         return this._isDirty;
     }
 

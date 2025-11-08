@@ -1,7 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { Rect } from '@geometry/rect';
+import { Circle } from '@geometry/circle';
+import { Polygon } from '@geometry/polygon';
+import { Line } from '@geometry/line';
 import { isShape2d } from '@geometry/shape2d';
-import { Line, Polygon, Point, Circle } from '@src/index';
+import { Point } from '@core/point';
 
 describe('Shape2d', () => {
     it('rects are shape2d', () => {

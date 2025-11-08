@@ -1,8 +1,9 @@
-import { isSize, Point, Size } from '../core';
-import { clamp } from '../utils';
+import { Point } from '@core/point';
+import { isSize, type Size } from '@core/size';
+import { clamp } from '@utils/scalar';
+import { LazyCacheable } from '@core/lazyCacheable';
 import { Circle } from './circle';
-import { LazyCacheable } from '../core/lazyCacheable';
-import { Shape2d } from './shape2d';
+import { type Shape2d } from './shape2d';
 
 /**
  * Represents a 2D rectangle defined by a position, width, and height.
@@ -99,17 +100,25 @@ export class Rect extends LazyCacheable {
     /** Calculates and caches the rectangle's vertices. */
     private calculateVertices() {
         this._vertices = [
-            new Point(this.x, this.y),
-            new Point(this.x + this.width, this.y),
-            new Point(this.x + this.width, this.y + this.height),
-            new Point(this.x, this.y + this.height),
+            new Point(this._position.x, this._position.y),
+            new Point(this._position.x + this.width, this._position.y),
+            new Point(
+                this._position.x + this.width,
+                this._position.y + this.height,
+            ),
+            new Point(this._position.x, this._position.y + this.height),
         ];
     }
 
     /** Calculates and caches the rectangle's Axis-Aligned Bounding Box (AABB). */
     private calculateAABB() {
         if (!this._aabb) {
-            this._aabb = new Rect(this.x, this.y, this.width, this.height);
+            this._aabb = new Rect(
+                this._position.x,
+                this._position.y,
+                this._size.width,
+                this._size.height,
+            );
         }
 
         this._aabb._position.copyFrom(this._position);

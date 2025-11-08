@@ -1,5 +1,5 @@
-import { Point } from '../core';
-import { LazyCacheable } from '../core/lazyCacheable';
+import { Point } from '@core/point';
+import { LazyCacheable } from '@core/lazyCacheable';
 import { Rect } from './rect';
 
 /**
@@ -84,9 +84,12 @@ export class Circle extends LazyCacheable {
 
     /** Calculates the Axis-Aligned Bounding Box (AABB) of the circle. */
     private calculateAABB() {
-        const { x, y } = this._position;
-        const r = this._radius;
-        this._aabb = new Rect(x - r, y - r, r * 2, r * 2);
+        this._aabb = new Rect(
+            this._position.x - this._radius,
+            this._position.y - this._radius,
+            this._radius * 2,
+            this._radius * 2,
+        );
     }
 
     /** Calculates the area of the circle. */

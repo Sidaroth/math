@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { isSize, type Size } from '../../src/core';
+import { isSize, type Size } from '@core/size';
 
 describe('isSize', () => {
     it('returns true for a valid Size object', () => {

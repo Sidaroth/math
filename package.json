@@ -29,17 +29,18 @@
         "test:watch": "vitest watch",
         "check": "tsc --noEmit",
         "bump": "lerna version",
-        "release": "lerna publish from-package --yes"
+        "release": "lerna publish from-package --yes",
+        "bench": "vitest bench"
     },
     "devDependencies": {
         "@types/node": "24.10.0",
-        "@vitest/coverage-v8": "^4.0.7",
+        "@vitest/coverage-v8": "^4.0.8",
         "lerna": "9.0.0",
         "oxlint": "1.26.0",
-        "prettier": "^3.6.2",
+        "prettier": "3.6.2",
         "tsup": "8.5.0",
         "typescript": "5.9.3",
-        "vitest": "4.0.7"
+        "vitest": "4.0.8"
     },
     "repository": {
         "type": "git",

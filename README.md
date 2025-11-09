@@ -59,9 +59,11 @@ pnpm add @sidaroth/math
 * Formatting: prettier
 
 ## Roadmap
+- [ ] Add tests for all existing files
+- [X] Add benchmarking
 - [ ] Add `Ray` geometry type
 - [ ] Add `Triangle` geometry type
-- [ ] Add more math utilities like `interpolate`, `radiansToDegrees`, etc.
+- [X] Add more math utilities like `interpolate`, `radiansToDegrees`, etc.
 - [ ] Add collision detection (SAT, circle-polygon, ray-shape)
 - [ ] Add physics body integration
 - [ ] Explore SIMD or WebAssembly backed math core (maybe)

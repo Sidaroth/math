@@ -232,13 +232,24 @@ export class Rect extends LazyCacheable {
     setSize(width: number, height: number): this;
 
     // Implementation
-    setSize(a: number | Size, b?: number): this {
-        if (isSize(a)) {
-            this._size.width = a.width;
-            this._size.height = a.height;
+    setSize(width: number | Size, height?: number): this {
+        if (isSize(width)) {
+            this._size.width = width.width;
+            this._size.height = width.height;
         } else {
-            this._size.width = a;
-            this._size.height = b ?? a;
+            if (!Number.isFinite(width) || !Number.isFinite(height)) {
+                logWarn(`Invalid width or height: ${width}, ${height}`);
+                return this;
+            }
+
+            this._size.width = width;
+
+            // note: height! is safe if we get here, because we have already checked that width and height are finite above
+            // and handled Size instance above. Sadly TS gets confused about the height?: number type and requires ?? null check
+            // which again confuses v8 test runner - ugh.
+            this._size.height = height!;
+
+            return this.markDirty();
         }
         return this.markDirty();
     }

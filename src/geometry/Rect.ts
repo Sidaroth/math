@@ -4,6 +4,7 @@ import { clamp } from '@utils/scalar';
 import { LazyCacheable } from '@core/lazyCacheable';
 import { Circle } from './circle';
 import { type Shape2d } from './shape2d';
+import { logWarn } from '@utils/logMsg';
 
 /**
  * Represents a 2D rectangle defined by a position, width, and height.
@@ -100,17 +101,24 @@ export class Rect extends LazyCacheable {
     private calculateVertices() {
         this._vertices = [
             new Point(this._position.x, this._position.y),
-            new Point(this._position.x + this.width, this._position.y),
+            new Point(this._position.x + this._size.width, this._position.y),
             new Point(
-                this._position.x + this.width,
-                this._position.y + this.height,
+                this._position.x + this._size.width,
+                this._position.y + this._size.height,
             ),
-            new Point(this._position.x, this._position.y + this.height),
+            new Point(this._position.x, this._position.y + this._size.height),
         ];
     }
 
     /** Calculates and caches the rectangle's Axis-Aligned Bounding Box (AABB). */
     private calculateAABB() {
+        // note: Since we want the external use of "get aabb" to be the same across all geometry - we need to return a rect within a rect.
+        // this can cause infinite recursion if not handled correctly - as the AABB will also call calculateAABB() - which will call calculateAABB() - which will call calculateAABB() - etc.
+
+        // If the AABB is the same as the rectangle, do nothing - AABB infinite recusion guard.
+        if (this._aabb === this) return;
+
+        // If the AABB is not set, create a new one.
         if (!this._aabb) {
             this._aabb = new Rect(
                 this._position.x,
@@ -118,8 +126,12 @@ export class Rect extends LazyCacheable {
                 this._size.width,
                 this._size.height,
             );
+            // Set the AABB to itself to prevent infinite recursion.
+            this._aabb._aabb = this._aabb;
+            return;
         }
 
+        // Update the AABB to the same position and size as the rectangle.
         this._aabb._position.copyFrom(this._position);
         this._aabb._size.width = this._size.width;
         this._aabb._size.height = this._size.height;
@@ -192,7 +204,15 @@ export class Rect extends LazyCacheable {
             return this.markDirty();
         }
 
-        this._position.set(x ?? 0, y ?? 0);
+        if (!Number.isFinite(x) || !Number.isFinite(y)) {
+            logWarn(`Invalid x or y: ${x}, ${y}`);
+            return this;
+        }
+
+        // note: y! is safe if we get here, because we have already checked that x and y are finite above
+        // and handled point instance above. Sadly TS gets confused about the y?: number type and requires ?? null check
+        // which again confuses v8 test runner - ugh.
+        this._position.set(x, y!);
         return this.markDirty();
     }
 

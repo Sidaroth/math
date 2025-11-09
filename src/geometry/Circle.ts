@@ -11,7 +11,7 @@ import { Rect } from './rect';
 export class Circle extends LazyCacheable {
     private readonly _position: Point = new Point();
 
-    private _aabb: Rect = new Rect();
+    private readonly _aabb: Rect = new Rect();
 
     private _radius: number = 0;
 
@@ -83,12 +83,11 @@ export class Circle extends LazyCacheable {
 
     /** Calculates the Axis-Aligned Bounding Box (AABB) of the circle. */
     private calculateAABB() {
-        this._aabb = new Rect(
+        this._aabb.setPosition(
             this._position.x - this._radius,
             this._position.y - this._radius,
-            this._radius * 2,
-            this._radius * 2,
         );
+        this._aabb.setSize(this._radius * 2, this._radius * 2);
     }
 
     /** Calculates the area of the circle. */

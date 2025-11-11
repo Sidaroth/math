@@ -1,0 +1,28 @@
+{
+    "extends": "../../tsconfig.json",
+    "compilerOptions": {
+        "baseUrl": ".",
+        "paths": {
+            "@core/*": [
+                "src/core/*"
+            ],
+            "@geometry/*": [
+                "src/geometry/*"
+            ],
+            "@utils/*": [
+                "src/utils/*"
+            ],
+            "@src/*": [
+                "src/*"
+            ]
+        }
+    },
+    "include": [
+        "src",
+        "tests"
+    ],
+    "exclude": [
+        "dist",
+        "node_modules"
+    ]
+}

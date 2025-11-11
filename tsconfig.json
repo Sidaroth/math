@@ -31,23 +31,16 @@
         "sourceMap": true,
         "baseUrl": ".",
         "paths": {
-            "@core/*": [
-                "src/core/*"
+            "@sidaroth/math": [
+                "packages/math/src"
             ],
-            "@geometry/*": [
-                "src/geometry/*"
-            ],
-            "@utils/*": [
-                "src/utils/*"
-            ],
-            "@src/*": [
-                "src/*"
+            "@sidaroth/core": [
+                "packages/core/src"
             ]
         }
     },
     "include": [
-        "src",
-        "tests"
+        "packages/**/*.ts"
     ],
     "exclude": [
         "dist",

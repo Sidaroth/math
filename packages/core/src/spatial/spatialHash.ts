@@ -37,28 +37,47 @@ import { ISpatialStructure } from './ISpatialStructure';
  * // Clear all cells (e.g., between frames)
  * grid.clear();
  */
-export class SpatialHash<T> implements ISpatialStructure<T> {
+export class SpatialHash<T extends object> implements ISpatialStructure<T> {
     /** Size (in world units) of one cell in the uniform grid. */
     private readonly cellSize: number;
 
     /** The hash grid: maps cell coordinates `"x,y"` → list of items in that cell. */
-    private readonly grid: Map<string, T[]> = new Map();
+    private readonly grid: Map<number, T[]> = new Map();
+
+    /** The reverse hash map: maps items → cell key. WeakMap is used to avoid a strong reference to the item (it can stil be GC'd if everywhere else drops it) */
+    private reverse = new WeakMap<T, number>();
 
     constructor(cellSize: number) {
         this.cellSize = cellSize;
     }
 
     /**
-     * Convert a 2D coordinate into a cell key string.
+     * Packs two signed 16-bit cell coordinates into a single 32-bit key.
+     * Works for grids up to ±32,767 cells in either dimension.
+     *
+     * @param x
+     * @param y
+     * @returns the key
+     */
+    private getCellKey(x: number, y: number): number {
+        // Magic bitwise math - for performance (string keys are too slow - too many heap allocations)
+        // This is a simple and fast way to convert two signed 16-bit coordinates into a single 32-bit key.
+        // It's a trade-off between performance and memory usage.
+        return (x << 16) ^ (y & 0xffff);
+    }
+
+    /**
+     * Convert a 2D coordinate into a cell key.
      *
      * @param x - The x coordinate.
      * @param y - The y coordinate.
-     * @returns The cell key string in the format `"x,y"`.
+     * @returns The cell key
      */
-    private hash(x: number, y: number): string {
+    private hash(x: number, y: number): number {
         const cellX = Math.floor(x / this.cellSize);
         const cellY = Math.floor(y / this.cellSize);
-        return `${cellX},${cellY}`;
+
+        return this.getCellKey(cellX, cellY);
     }
 
     /**
@@ -75,23 +94,30 @@ export class SpatialHash<T> implements ISpatialStructure<T> {
         const cell = this.grid.get(key) ?? [];
         cell.push(item);
         this.grid.set(key, cell);
+        this.reverse.set(item, key);
     }
 
     /**
      * Removes an item from whichever cell currently contains it.
-     * This performs a linear search across all cells (O(n_cells * avg_items)).
      *
      * @param item - The item to remove.
      */
     remove(item: T): void {
-        for (const [key, arr] of this.grid) {
-            const i = arr.indexOf(item);
-            if (i !== -1) {
-                arr.splice(i, 1);
-                if (!arr.length) this.grid.delete(key);
-                return;
-            }
+        // Do a reverse lookup to find the cell key for the item
+        const key = this.reverse.get(item);
+        if (!key) return;
+
+        // Find the cell based on the key.
+        const cell = this.grid.get(key);
+        if (!cell) return;
+
+        // Remove the item from the cell.
+        const index = cell.indexOf(item);
+        if (index !== -1) {
+            cell.splice(index, 1);
+            if (!cell.length) this.grid.delete(key);
         }
+        this.reverse.delete(item);
     }
 
     /**
@@ -103,6 +129,12 @@ export class SpatialHash<T> implements ISpatialStructure<T> {
      * @param y - The new Y coordinate in world space.
      */
     update(item: T, x: number, y: number): void {
+        const oldKey = this.reverse.get(item);
+        const newKey = this.hash(x, y);
+
+        // No need to move to the same cell
+        if (oldKey === newKey) return;
+
         this.remove(item);
         this.insert(item, x, y);
     }
@@ -129,7 +161,7 @@ export class SpatialHash<T> implements ISpatialStructure<T> {
         // If radius is similar to cell size - it will check the 3x3 grid around the center point.
         for (let cy = minY; cy <= maxY; cy += 1) {
             for (let cx = minX; cx <= maxX; cx += 1) {
-                const cell = this.grid.get(`${cx},${cy}`);
+                const cell = this.grid.get(this.getCellKey(cx, cy));
                 if (cell) {
                     result.push(...cell);
                 }
@@ -145,5 +177,8 @@ export class SpatialHash<T> implements ISpatialStructure<T> {
      */
     clear(): void {
         this.grid.clear();
+
+        // As weakmap does not have a clear method, we need to create a new one - GC will take care of the old ones (the refs are weak anyway)
+        this.reverse = new WeakMap();
     }
 }
